@@ -26,9 +26,14 @@ tf.random.set_seed(SEED)
 
 class MyCustomCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
+        # Access the model explicitly via the 'model' attribute
         start = time.time()
-        self.model.evaluate(x_test, y_test, verbose=0, batch_size=128)
-        print('Test seconds: ', time.time() - start)
+        # Ensure 'model' is correctly accessed and callable
+        if hasattr(self, 'model') and self.model is not None:
+            self.model.evaluate(x_test, y_test, verbose=0, batch_size=128)
+            print('Test seconds: ', time.time() - start)
+        else:
+            print('Model is not available for evaluation.')
 
 class timecallback(tf.keras.callbacks.Callback):
     def __init__(self):
@@ -48,11 +53,14 @@ class TestTimeCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
         start = time.time()
-        self.model.evaluate(x_test, y_test, verbose=0, batch_size=128)
-        test_time = time.time() - start
-        self.test_times.append(test_time)
-        logs['test_time'] = test_time
-        print(f'Test seconds: {test_time:.2f}')
+        if hasattr(self, 'model') and self.model is not None:
+            self.model.evaluate(x_test, y_test, verbose=0, batch_size=128)
+            test_time = time.time() - start
+            self.test_times.append(test_time)
+            logs['test_time'] = test_time
+            print(f'Test seconds: {test_time:.2f}')
+        else:
+            print('Model is not available for evaluation.')
 
 class TrainTimeCallback(tf.keras.callbacks.Callback):
     def __init__(self):
