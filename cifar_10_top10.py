@@ -31,7 +31,7 @@ class MyCustomCallback(tf.keras.callbacks.Callback):
         print('Test seconds: ',time.time()-start)
 
 class timecallback(tf.keras.callbacks.Callback):
-    def __init__(self):
+    def _init_(self):
         mark = 0
         duration = 0
     def on_epoch_begin(self, epoch, logs=None):
@@ -41,8 +41,8 @@ class timecallback(tf.keras.callbacks.Callback):
         print('Train seconds: ',self.duration)
 
 class TestTimeCallback(tf.keras.callbacks.Callback):
-    def __init__(self):
-        super(TestTimeCallback, self).__init__()
+    def _init_(self):
+        super(TestTimeCallback, self)._init_()
         self.test_times = []
 
     def on_epoch_end(self, epoch, logs=None):
@@ -55,8 +55,8 @@ class TestTimeCallback(tf.keras.callbacks.Callback):
         print(f'Test seconds: {test_time:.2f}')
 
 class TrainTimeCallback(tf.keras.callbacks.Callback):
-    def __init__(self):
-        super(TrainTimeCallback, self).__init__()
+    def _init_(self):
+        super(TrainTimeCallback, self)._init_()
         self.train_times = []
 
     def on_epoch_begin(self, epoch, logs=None):
@@ -72,31 +72,14 @@ class TrainTimeCallback(tf.keras.callbacks.Callback):
 def preprocess_data(X, Y):
   X_p = tf.keras.applications.resnet.preprocess_input(X)
   # encode to one-hot
-  Y_p = tf.keras.utils.to_categorical(Y, 10) #cifar 10 için 2. parametre 10 olmalı. 100 için 100
+  Y_p = tf.keras.utils.to_categorical(Y, 10)
   return X_p, Y_p
 
-(x_train, y_train),(x_test, y_test) = tf.keras.datasets.cifar10.load_data() #cifar 10 için cifar10 yaz, 100 için 100
+(x_train, y_train),(x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
 # pre-procces data
 x_train, y_train = preprocess_data(x_train, y_train)
 x_test, y_test = preprocess_data(x_test, y_test)
-print(x_train.shape,y_train.shape)
-print(type(x_train.shape),type(y_train))
-
-from tensorflow.keras.models import clone_model
-
-def top10_trainable(model):
-  for layer in model.layers:
-    layer.trainable = False
-  conv_count=0
-  for layer in model.layers[::-1]:
-    if (isinstance(layer, tf.keras.layers.Conv2D)):
-      conv_count+=1
-    if conv_count <= 9:
-      layer.trainable = True
-      if conv_count == 9:
-        break
-  return model
 
 resnet50 = tf.keras.applications.ResNet50(include_top=False,
                                           weights='imagenet',
@@ -108,23 +91,23 @@ new_input = tf.keras.Input(shape=(32, 32, 3),name="")
 
 # upscale layer
 x = tf.keras.layers.Lambda(lambda x: tf.image.resize(x,[160,160]))(new_input)
-x = top10_trainable(resnet50)(x)
+x = resnet50(x)
 
 model = tf.keras.models.Model(inputs=new_input, outputs=x)
 out = model.output
 out = tf.keras.layers.GlobalAveragePooling2D()(out)
 #initializer = tf.keras.initializers.GlorotUniform(seed=SEED)
 
-out = tf.keras.layers.Dense(10, activation='softmax')(out) #cifar 10 için 1. parametre 10, 100 için 100
+out = tf.keras.layers.Dense(10, activation='softmax')(out)
 
 model = tf.keras.models.Model(inputs=model.input, outputs=out)
 
 my_val_callback = MyCustomCallback()
 timetaken = timecallback()
 
-model.layers[-1].trainable = True
-#for layer in model.layers[:-2]:#
-  #layer.trainable = False
+model.trainable = True
+for layer in model.layers[:-2]:
+  layer.trainable = False
 
 model.summary()
 
@@ -149,12 +132,6 @@ def plot_loss_accuracy(history):
 model.compile(optimizer=tf.keras.optimizers.Adam(),
               loss='categorical_crossentropy',
               metrics=['accuracy'])
-from tensorflow.keras.callbacks import Callback
-
-class ValidationBatchSizeCallback(Callback):
-    def on_test_batch_begin(self, batch, logs=None):
-        print(f"Validation Batch {batch} started")
-validation_batch_callback = ValidationBatchSizeCallback()
 
 train_callback = TrainTimeCallback()
 test_callback = TestTimeCallback()
@@ -163,7 +140,7 @@ history = model.fit(x=x_train,
           y=y_train,
           batch_size=128,
           epochs=10,
-          callbacks=[train_callback, test_callback,validation_batch_callback],verbose=1,
+          callbacks=[train_callback, test_callback],verbose=1,
           validation_data=(x_test, y_test))
 
 histories.append(history)
@@ -187,4 +164,4 @@ times = calculate_total_times(train_callback, test_callback)
 print(f"\nTotal training time: {times['total_train_time']:.2f} seconds")
 print(f"Total test time: {times['total_test_time']:.2f} seconds")
 print(f"Average training time per epoch: {times['avg_train_time']:.2f} seconds")
-print(f"Average test time per epoch: {times['avg_test_time']:.2f} seconds")
+print(f"Average test time per epoch: {times['avg_test_time']:.2f} seconds")
