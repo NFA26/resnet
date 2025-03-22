@@ -80,8 +80,8 @@ def preprocess_data(X, Y):
 # pre-procces data
 x_train, y_train = preprocess_data(x_train, y_train)
 x_test, y_test = preprocess_data(x_test, y_test)
-display(x_train.shape,y_train.shape)
-display(type(x_train.shape),type(y_train))
+print(x_train.shape,y_train.shape)
+print(type(x_train.shape),type(y_train))
 
 from tensorflow.keras.models import clone_model
 
