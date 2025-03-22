@@ -25,14 +25,14 @@ np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
 class MyCustomCallback(tf.keras.callbacks.Callback):
-    def __init__(self, model, x_test, y_test):
+    def __init__(self, x_test, y_test):
         super().__init__()
-        self.model = model
         self.x_test = x_test
         self.y_test = y_test
         
     def on_epoch_end(self, epoch, logs=None):
         start = time.time()
+        # Using the model passed in the callback
         self.model.evaluate(self.x_test, self.y_test, verbose=0, batch_size=128)
         print('Test seconds: ', time.time() - start)
 
@@ -47,9 +47,8 @@ class timecallback(tf.keras.callbacks.Callback):
         print('Train seconds: ', self.duration)
 
 class TestTimeCallback(tf.keras.callbacks.Callback):
-    def __init__(self, model, x_test, y_test):
+    def __init__(self, x_test, y_test):
         super(TestTimeCallback, self).__init__()
-        self.model = model
         self.x_test = x_test
         self.y_test = y_test
         self.test_times = []
@@ -123,7 +122,7 @@ out = tf.keras.layers.Dense(10, activation='softmax')(out)  # CIFAR-10
 
 model = tf.keras.models.Model(inputs=model.input, outputs=out)
 
-my_val_callback = MyCustomCallback(model, x_test, y_test)
+my_val_callback = MyCustomCallback(x_test, y_test)
 timetaken = timecallback()
 
 model.layers[-1].trainable = True
@@ -159,7 +158,7 @@ validation_batch_callback = ValidationBatchSizeCallback()
 EPOCHS = 10
 BATCH_SIZE = 128
 train_callback = TrainTimeCallback()
-test_callback = TestTimeCallback(model, x_test, y_test)
+test_callback = TestTimeCallback(x_test, y_test)
 
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(BATCH_SIZE)
 test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(BATCH_SIZE)
